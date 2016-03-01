@@ -1,0 +1,17 @@
+Table Name,Column Name,Column Type,Key,Indexed,References
+Faculty,Name,String,False,False,null
+Faculty,ID,Integer,True,False,null
+Major,Faculty_ID,Integer,False,False,Faculty.IDMajor,Name,String,False,False,null
+Major,ID,Integer,True,False,null
+Course,Name,String,False,False,null
+Course,ID,Integer,True,False,null
+Course,Code,String,False,False,null
+Course,Hours,Integer,False,False,null
+Course,Major_ID,Integer,False,False,Major.IDCourse,Semester,Integer,False,False,null
+Student,ID,Integer,True,False,null
+Student,GPA,Double,False,False,null
+Student,First_Name,String,False,False,null
+Student,Age,Integer,False,False,null
+Student,Last_Name,String,False,False,null
+Student_in_Course,ID,Integer,True,False,null
+Student_in_Course,Student_ID,Integer,False,False,Student.IDStudent_in_Course,Course_ID,Integer,False,False,Course.ID
