@@ -3,15 +3,17 @@ package BPTree;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import DB.DBApp;
+
 public class Leaf extends Node {
 
 	String nextLeafPath;
 	String prevLeafPath;
 	ArrayList<TuplePointer> pointers;
 
-	public Leaf(BPTree tree, String parent) {
-		super(tree, parent);
-		this.min = (tree.n+1)/2;
+	public Leaf(String tree, String parent, int n) {
+		super(tree, parent, n);
+		this.min = (n+1)/2;
 		pointers = new ArrayList<TuplePointer>();
 	}
 
@@ -64,8 +66,10 @@ public class Leaf extends Node {
 
 			if(this.pointers.size() == 1)
 			{
-				if(parentIdx==0)
-					this.tree.updateUpper(dKey, toBeBorrwed.key, this.parent);
+				if(parentIdx==0){
+					BPTree tree = (BPTree) DBApp.readObject(this.tree);
+					tree.updateUpper(dKey, toBeBorrwed.key, this.parent);
+				}
 				else
 					parent.entries.get(parentIdx-1).key = toBeBorrwed.key;
 			}
@@ -107,7 +111,7 @@ public class Leaf extends Node {
 
 		}
 		
-		this.tree.handleParent(parent, this.parent,tmpPath);
+		BPTree.handleParent(this.tree,parent, this.parent,tmpPath);
 	}
 
 

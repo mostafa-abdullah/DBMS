@@ -21,7 +21,7 @@ public class BPTree implements Serializable{
 		this.tableName = tableName;
 		this.column = column;
 		countNodes = 1;
-		root = new Leaf(this,null);
+		root = new Leaf(pathToTree+"/Btree.class",null,n);
 		root.min = 1;
 		pathToTree = "data/"+tableName+"/indices/"+column;
 		rootPath = pathToTree+"/0.class";
@@ -35,7 +35,7 @@ public class BPTree implements Serializable{
 	{
 		String pathToLeaf = findLeaf(rootPath, key,null);
 
-		System.out.println(pathToLeaf);
+//		System.out.println(pathToLeaf);
 		Leaf leaf = (Leaf) DBApp.readObject(pathToLeaf);
 		TuplePointer newPointer = new TuplePointer(idx, pagePath,key);
 		if(leaf.pointers.size() == 0){
@@ -49,7 +49,7 @@ public class BPTree implements Serializable{
 		//		}
 		if(leaf.pointers.size() > leaf.max)
 		{
-			Leaf newLeaf = new Leaf(this, leaf.parent);
+			Leaf newLeaf = new Leaf(pathToTree+"/Btree.class", leaf.parent,n);
 			newLeaf.nextLeafPath = leaf.nextLeafPath;
 			newLeaf.prevLeafPath = pathToLeaf;
 
@@ -78,7 +78,7 @@ public class BPTree implements Serializable{
 		if(pathToNode == null)
 		{
 
-			NonLeaf root = new NonLeaf(this, null);
+			NonLeaf root = new NonLeaf(pathToTree+"/Btree.class", null,n);
 			if(this.root != null)
 			{
 				this.root.min = (int)Math.ceil((n+1)/2.0) - 1;
@@ -88,6 +88,7 @@ public class BPTree implements Serializable{
 			rootPath = pathToTree+"/"+countNodes++ + ".class";
 			root.entries.add(ne);
 			this.root = root;
+			DBApp.writeObject(this, pathToTree+"/Btree.class");
 			DBApp.writeObject(root, rootPath);
 			return;
 		}
@@ -102,7 +103,7 @@ public class BPTree implements Serializable{
 
 			ArrayList<NodeEntry> nes = nl.getSecondHalf();
 
-			NonLeaf newNode = new NonLeaf(this, nl.parent);
+			NonLeaf newNode = new NonLeaf(pathToTree+"/Btree.class", nl.parent,n);
 			String newPath = pathToTree+"/"+(countNodes++) + ".class";
 			newNode.entries = nes;
 
@@ -126,13 +127,17 @@ public class BPTree implements Serializable{
 		String pathToLeaf = findLeaf(rootPath, key, null);
 		Leaf leaf = (Leaf) DBApp.readObject(pathToLeaf);
 		int deletedIdx = leaf.deleteKey(key);
-		if(leaf.parent == null)
+
+//		System.out.println(leaf);
+		if(leaf.parent == null){
+			DBApp.writeObject(leaf, pathToLeaf);
 			return;
+		}
 		if(leaf.pointers.size() < leaf.min){
-			
 			NonLeaf parent = (NonLeaf) DBApp.readObject(leaf.parent);
-			
+//			DBApp.writeObject(leaf, pathToLeaf);
 			LeftAndRightSiblings lrs = getSibLings(pathToLeaf, parent);
+			
 			String siblingLeft = lrs.sibLingLeft;
 			String siblingRight = lrs.sibLingRight;
 			int parentIdx = lrs.idx;
@@ -141,44 +146,64 @@ public class BPTree implements Serializable{
 			Leaf rightLeaf = null;
 			if(siblingLeft != null)
 			{
+				
 				// borrow from left
+				
 				leftLeaf = (Leaf) DBApp.readObject(siblingLeft);
+				
 				if(leftLeaf.pointers.size() > leftLeaf.min)
 				{
+					
 					leaf.borrowTuple(leftLeaf, parent, true, parentIdx, key);
+					DBApp.writeObject(leftLeaf, siblingLeft);
 				}
 				else if(siblingRight != null)
 				{
+					
 
 					rightLeaf = (Leaf) DBApp.readObject(siblingRight);
 					if(rightLeaf.pointers.size() > rightLeaf.min)
 					{
 						leaf.borrowTuple(rightLeaf, parent, false, parentIdx, key);
+						DBApp.writeObject(rightLeaf, siblingRight);
 					}
 					else
 					{
 						leaf.mergeWithLeaf(leftLeaf, parent, parentIdx, true, key);
+						DBApp.writeObject(leftLeaf, siblingLeft);
 					}
+				}
+				else
+				{
+					leaf.mergeWithLeaf(leftLeaf, parent, parentIdx, true, key);
+					DBApp.writeObject(leftLeaf, siblingLeft);
 				}
 					
 			}
 			else if(siblingRight != null)
 			{
+				
 				// borrow from right
 				rightLeaf = (Leaf) DBApp.readObject(siblingRight);
 				if(rightLeaf.pointers.size() > rightLeaf.min)
 				{
 					leaf.borrowTuple(rightLeaf, parent, false, parentIdx, key);
+					DBApp.writeObject(rightLeaf, siblingRight);
 				}
 				else
 				{
 					leaf.mergeWithLeaf(rightLeaf, parent, parentIdx, false, key);
+					DBApp.writeObject(rightLeaf, siblingRight);
 				}
 			}
 			else
 			{
 				//rawwa7 le omak
+				
 			}
+			
+			DBApp.writeObject(leaf, pathToLeaf);
+			DBApp.writeObject(parent, leaf.parent);
 
 
 
@@ -192,28 +217,40 @@ public class BPTree implements Serializable{
 				Comparable newKey = leaf.pointers.get(0).key;
 				updateUpper(key,newKey,leaf.parent);
 			}
+			DBApp.writeObject(leaf, pathToLeaf);
+			
 		}
 
 	}
 	
 	
 	
-	public void handleParent(NonLeaf currentNode, String pathToNode, String tmpPath) throws ClassNotFoundException, IOException
+	public static void handleParent(String treePath, NonLeaf currentNode, String pathToNode, String tmpPath) throws ClassNotFoundException, IOException
 	{
+		BPTree tree = (BPTree) DBApp.readObject(treePath);
 		
 		if(currentNode.entries.size() >= currentNode.min)
 			return;
 		if(currentNode.parent == null)
 		{
+			
 			// current node is the root
 			if(currentNode.entries.size() == 0){
-				this.rootPath = tmpPath;
-				this.root = (Node) DBApp.readObject(tmpPath);
+//				System.out.println(rootPath);
+//				System.out.println(tmpPath);
+				
+				tree.rootPath = tmpPath;
+				tree.root = (Node) DBApp.readObject(tmpPath);
+				
+				DBApp.writeObject(tree, treePath);
+				
 			}
 		}
 		else
 		{
+			
 			NonLeaf parent = (NonLeaf) DBApp.readObject(currentNode.parent);
+			
 			LeftAndRightSiblings lrs = getSibLings(pathToNode, parent);
 			String siblingLeft = lrs.sibLingLeft;
 			String siblingRight = lrs.sibLingRight;
@@ -222,24 +259,42 @@ public class BPTree implements Serializable{
 			NonLeaf rightNonLeaf = null;
 			if(siblingLeft != null)
 			{
+				
 				// borrow from left
 				leftNonLeaf = (NonLeaf) DBApp.readObject(siblingLeft);
+				
 				if(leftNonLeaf.entries.size() > leftNonLeaf.min)
 				{
 					currentNode.borrow(leftNonLeaf, parent, true, parentIdx, tmpPath);
+					DBApp.writeObject(leftNonLeaf, siblingLeft);
 				}
 				else if(siblingRight != null)
 				{
+					
 
 					rightNonLeaf = (NonLeaf) DBApp.readObject(siblingRight);
 					if(rightNonLeaf.entries.size() > rightNonLeaf.min)
 					{
 						currentNode.borrow(rightNonLeaf, parent, false, parentIdx, tmpPath);
+						DBApp.writeObject(rightNonLeaf, siblingRight);
 					}
 					else
 					{
 						currentNode.mergeWithNonLeaf(leftNonLeaf, parent, true, parentIdx, tmpPath);
+						DBApp.writeObject(leftNonLeaf, siblingLeft);
 					}
+				}
+				else
+				{
+//					System.out.println("x");
+					
+					
+					currentNode.mergeWithNonLeaf(leftNonLeaf, parent, true, parentIdx, tmpPath);
+					
+					System.out.println(((BPTree)DBApp.readObject(currentNode.tree)).root);
+					
+					DBApp.writeObject(leftNonLeaf, siblingLeft);
+					
 				}
 					
 			}
@@ -250,21 +305,25 @@ public class BPTree implements Serializable{
 				if(rightNonLeaf.entries.size() > rightNonLeaf.min)
 				{
 					currentNode.borrow(rightNonLeaf, parent, false, parentIdx, tmpPath);
+					DBApp.writeObject(rightNonLeaf, siblingRight);
 				}
 				else
 				{
 					currentNode.mergeWithNonLeaf(rightNonLeaf, parent, false, parentIdx, tmpPath);
+					DBApp.writeObject(rightNonLeaf, siblingRight);
 				}
 			}
 			else
 			{
 				//rawwa7 le omak
 			}
+			DBApp.writeObject(currentNode, pathToNode);
+			DBApp.writeObject(parent, currentNode.parent);
 		}
 	}
 	
 	
-	public LeftAndRightSiblings getSibLings(String pathToNode, NonLeaf parent)
+	public static LeftAndRightSiblings getSibLings(String pathToNode, NonLeaf parent)
 	{
 		String siblingLeft = null;
 		String siblingRight = null;
@@ -275,7 +334,7 @@ public class BPTree implements Serializable{
 			if(e.left.equals(pathToNode)){
 				parentIdx = i;
 				if(i > 0)
-					siblingLeft = parent.entries.get(i-1).right;
+					siblingLeft = parent.entries.get(i-1).left;
 				siblingRight = e.right;
 				break;
 			}
@@ -315,9 +374,11 @@ public class BPTree implements Serializable{
 			if(e.key.equals(oldKey))
 			{
 				e.key = newKey;
+				DBApp.writeObject(nextNode, pathToNode);
 				return;
 			}
 		}
+		
 		updateUpper(oldKey,newKey, nextNode.parent);
 	}
 
@@ -411,6 +472,7 @@ public class BPTree implements Serializable{
 			return res;
 		}
 		NonLeaf nl = (NonLeaf) n;
+//		System.out.println(nl);
 		String res = "";
 		for(NodeEntry e : nl.entries)
 		{
@@ -438,26 +500,45 @@ public class BPTree implements Serializable{
 		tr.insert(23, "", 5);
 
 		tr.insert(5, "", 5);
-		System.out.println(tr+"--------------------------------");
+//		System.out.println(tr+"--------------------------------");
 
-
+//
 		tr.insert(7, "", 5);
-		System.out.println(tr+"--------------------------------");
+////		System.out.println(tr+"--------------------------------");
 		tr.insert(2, "", 5);
-		System.out.println(tr+"--------------------------------");
+//		System.out.println(tr+"--------------------------------");
 		tr.insert(28, "", 5);
-		System.out.println(tr+"--------------------------------");
+////		System.out.println(tr+"--------------------------------");
 		tr.insert(9, "", 5);
-		System.out.println(tr+"--------------------------------");
+////		System.out.println(tr+"--------------------------------");
 		tr.insert(18, "", 5);
-		System.out.println(tr+"--------------------------------");
+////		System.out.println(tr+"--------------------------------");
 		tr.insert(24, "", 5);
-		System.out.println(tr+"--------------------------------");
+////		System.out.println(tr+"--------------------------------");
 		tr.insert(40, "", 5);
-		System.out.println(tr+"--------------------------------");
+////		System.out.println(tr+"--------------------------------");
 		tr.insert(48, "", 5);
-		System.out.println(tr+"--------------------------------");
-
+		System.out.println(((BPTree)DBApp.readObject(tr.pathToTree+"/Btree.class")));
+		tr.delete(5);
+		tr.delete(23);
+//		System.out.println(tr+"--------------------------------");
+		tr.delete(8);
+		System.out.println("-------------------------------------------------------");
+		System.out.println(((BPTree)DBApp.readObject(tr.pathToTree+"/Btree.class")));
+//		System.out.println(tr.rootPath);
+//		System.out.println(((NonLeaf)DBApp.readObject(tr.rootPath)));
+		
+		
+//		System.out.println(tr+"--------------------------------");
+//		tr.delete(8);
+//		System.out.println(tr+"--------------------------------");
+//		tr.delete(12);
+		//NonLeaf root = (NonLeaf) DBApp.readObject(tr.rootPath);
+		//System.out.println(root);
+//		System.out.println(tr.root);
+//		tr.delete(2);
+		
+		//System.out.println(tr+"--------------------------------");
 		//		NonLeaf nl = (NonLeaf) DBApp.readObject("data/Student/indices/ID/7.class");
 		//		System.out.println(nl.entries.get(0).right);
 	}

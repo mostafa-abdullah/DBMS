@@ -9,9 +9,9 @@ public class NonLeaf extends Node {
 
 	ArrayList<NodeEntry> entries;
 	
-	public NonLeaf(BPTree tree, String parent) {
-		super(tree, parent);
-		this.min = (int) Math.ceil((tree.n+1)/2.0) - 1;
+	public NonLeaf(String tree, String parent, int n) {
+		super(tree, parent, n);
+		this.min = (int) Math.ceil((n+1)/2.0) - 1;
 		entries = new ArrayList<NodeEntry>();
 
 	}
@@ -45,13 +45,16 @@ public class NonLeaf extends Node {
 	
 	public void mergeWithNonLeaf(NonLeaf sibling, NonLeaf parent, boolean left, int parentIdx,String inTmpPath) throws ClassNotFoundException, IOException{
 		
+		
 		String outTmpPath = null;
 		NodeEntry p = null;
 		if(left)
 		{
-			
+
 			if(parentIdx > 0){
+				
 				p = parent.entries.remove(parentIdx-1);
+				
 				if(parent.entries.size() == 0)
 					outTmpPath = p.right;
 				else{
@@ -81,15 +84,21 @@ public class NonLeaf extends Node {
 				if(parentIdx >= 1 && parentIdx  <= parent.entries.size())
 					parent.entries.get(parentIdx-1).right = p.right;
 			}
-			if(sibling.entries.size() == 0)
-				p.right = inTmpPath;
+			if(this.entries.size() == 0)
+				p.left = inTmpPath;
 			else
-				p.right = sibling.entries.get(0).left;
+				p.left = this.entries.get(this.entries.size()-1).right;
+			
+			p.right = sibling.entries.get(0).left;
 			sibling.entries.add(0,p);
-			p.left = this.entries.get(this.entries.size()-1).right;
+			
 			sibling.entries.addAll(0,this.entries);
 		}
-		this.tree.handleParent(parent, this.parent, outTmpPath);
+		
+		DBApp.writeObject(this, outTmpPath);
+		
+		BPTree.handleParent(this.tree,parent, this.parent, outTmpPath);
+		
 	}
 	
 	
