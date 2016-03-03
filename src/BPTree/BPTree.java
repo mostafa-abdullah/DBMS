@@ -491,61 +491,21 @@ public class BPTree implements Serializable{
 	}
 
 	public static void main(String[] args) throws FileNotFoundException, IOException, ClassNotFoundException {
-		BPTree tr = new BPTree(2,"Student", "ID");
-
-		tr.insert(12, "", 5);
-		tr.insert(8, "", 5);
-		tr.insert(1, "", 5);
-
-		tr.insert(23, "", 5);
+		BPTree tr = new BPTree(4,"Student", "ID");
 
 		tr.insert(5, "", 5);
-//		System.out.println(tr+"--------------------------------");
-
-//
-		tr.insert(7, "", 5);
-////		System.out.println(tr+"--------------------------------");
-		tr.insert(2, "", 5);
-//		System.out.println(tr+"--------------------------------");
-		tr.insert(28, "", 5);
-////		System.out.println(tr+"--------------------------------");
-		tr.insert(9, "", 5);
-////		System.out.println(tr+"--------------------------------");
-		tr.insert(18, "", 5);
-////		System.out.println(tr+"--------------------------------");
-		tr.insert(24, "", 5);
-////		System.out.println(tr+"--------------------------------");
-		tr.insert(40, "", 5);
-////		System.out.println(tr+"--------------------------------");
-		tr.insert(48, "", 5);
-//		System.out.println(((BPTree)DBApp.readObject(tr.pathToTree+"/Btree.class")));
-		tr.delete(5);
+		tr.insert(10, "", 5);
+		tr.insert(25, "", 5);
+		tr.insert(13, "", 5);
+		tr.insert(12, "", 5);
+		tr.insert(10, "", 5);
+		tr.insert(11, "", 5);
+		tr.insert(26, "", 5);
+		tr.insert(1, "", 5);
+		tr.insert(29, "", 5);
 		
-		tr.delete(8);
-		tr.delete(9);
-		tr.insert(50,"asd",5);
-//		tr.delete(28);
-//		tr.delete(23);
 		System.out.println(tr+"--------------------------------");
-		
-//		System.out.println("-------------------------------------------------------");
-//		System.out.println(((BPTree)DBApp.readObject(tr.pathToTree+"/Btree.class")));
-//		System.out.println(tr.rootPath);
-//		System.out.println(((NonLeaf)DBApp.readObject(tr.rootPath)));
-		
-		
-//		System.out.println(tr+"--------------------------------");
-//		tr.delete(8);
-//		System.out.println(tr+"--------------------------------");
-//		tr.delete(12);
-		//NonLeaf root = (NonLeaf) DBApp.readObject(tr.rootPath);
-		//System.out.println(root);
-//		System.out.println(tr.root);
-//		tr.delete(2);
-		
-		//System.out.println(tr+"--------------------------------");
-		//		NonLeaf nl = (NonLeaf) DBApp.readObject("data/Student/indices/ID/7.class");
-		//		System.out.println(nl.entries.get(0).right);
+
 	}
 
 }

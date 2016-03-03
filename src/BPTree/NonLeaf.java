@@ -48,21 +48,23 @@ public class NonLeaf extends Node {
 		
 		String outTmpPath = null;
 		NodeEntry p = null;
+		
 		if(left)
 		{
-
+			
 			if(parentIdx > 0){
 				
 				p = parent.entries.remove(parentIdx-1);
 				
-				if(parent.entries.size() == 0)
+//				if(parent.entries.size() == 0)
 					outTmpPath = p.right;
-				else{
+//				
+//				else{
 					if(parentIdx > 0 && parentIdx <= parent.entries.size() )
 						parent.entries.get(parentIdx-1).left = p.right;
 					if(parentIdx > 1 && parentIdx <= parent.entries.size() + 1)
 						parent.entries.get(parentIdx-2).right = p.right;
-				}
+//				}
 				if(this.entries.size() == 0)
 					p.right = inTmpPath;
 				else
@@ -75,15 +77,16 @@ public class NonLeaf extends Node {
 		}
 		else
 		{
+			
 			p = parent.entries.remove(parentIdx);
-			if(parent.entries.size() == 0)
+//			if(parent.entries.size() == 0)
 				outTmpPath = p.right;
-			else{
+//			else{
 				if(parentIdx >= 0 && parentIdx < parent.entries.size())
 					parent.entries.get(parentIdx).left = p.right;
 				if(parentIdx >= 1 && parentIdx  <= parent.entries.size())
 					parent.entries.get(parentIdx-1).right = p.right;
-			}
+//			}
 			if(this.entries.size() == 0)
 				p.left = inTmpPath;
 			else

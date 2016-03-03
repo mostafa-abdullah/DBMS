@@ -50,8 +50,10 @@ public class Leaf extends Node {
 
 	public void borrowTuple(BPTree tree, Leaf sibling, NonLeaf parent, boolean left,int parentIdx,Comparable dKey) throws ClassNotFoundException, IOException
 	{
+		boolean willUpdateUpper = this.pointers.size() == 0 || this.pointers.get(0).key.compareTo(dKey) > 0;
 		if(left)
 		{
+//			willUpdateUpper = false;
 			TuplePointer toBeBorrwed = sibling.pointers.remove(sibling.pointers.size()-1);
 			this.pointers.add(0,toBeBorrwed);
 			//update parent
@@ -59,12 +61,13 @@ public class Leaf extends Node {
 		}
 		else
 		{
+			willUpdateUpper &= parentIdx == 0;
 			TuplePointer toBeBorrwed = sibling.pointers.remove(0);	
 			this.pointers.add(toBeBorrwed);
 			Comparable newParent = sibling.pointers.get(0).key;
 			parent.entries.get(parentIdx).key = newParent;
 
-			if(this.pointers.size() == 1)
+			if(willUpdateUpper)
 			{
 				if(parentIdx==0){
 					
@@ -74,14 +77,18 @@ public class Leaf extends Node {
 					parent.entries.get(parentIdx-1).key = toBeBorrwed.key;
 			}
 		}
+//		System.out.println(willUpdateUpper);
 	}
 
 
 	public void mergeWithLeaf(BPTree tree, Leaf sibling, NonLeaf parent, int parentIdx, boolean left, Comparable dKey) throws ClassNotFoundException, IOException
 	{
 		String tmpPath = null;
+		boolean willUpdateUpper = this.pointers.size() == 0 || this.pointers.get(0).key.compareTo(dKey) > 0; 
+		Comparable newKey = null;
 		if(left)
 		{
+			willUpdateUpper = false;
 			this.pointers.addAll(0,sibling.pointers);
 			if(parentIdx > 0)
 			{
@@ -98,6 +105,7 @@ public class Leaf extends Node {
 		}
 		else
 		{
+			willUpdateUpper &= parentIdx == 0;
 			sibling.pointers.addAll(0,this.pointers);
 
 			if(parentIdx > 0){
@@ -108,10 +116,16 @@ public class Leaf extends Node {
 				tmpPath = parent.entries.get(parentIdx).right;
 			}
 			parent.entries.remove(parentIdx);
-
+			newKey = sibling.pointers.get(0).key;
 		}
-		
+		if(willUpdateUpper){
+			tree.updateUpper(dKey, newKey, this.parent);
+			System.out.println(((NonLeaf)DBApp.readObject(this.parent)));
+//			System.out.println(dKey+" " +newKey +" "+willUpdateUpper);
+		}
 		tree.handleParent(parent, this.parent,tmpPath);
+		
+		
 	}
 
 
