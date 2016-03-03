@@ -48,7 +48,7 @@ public class Leaf extends Node {
 		return -1;
 	}
 
-	public void borrowTuple(Leaf sibling, NonLeaf parent, boolean left,int parentIdx,Comparable dKey) throws ClassNotFoundException, IOException
+	public void borrowTuple(BPTree tree, Leaf sibling, NonLeaf parent, boolean left,int parentIdx,Comparable dKey) throws ClassNotFoundException, IOException
 	{
 		if(left)
 		{
@@ -68,7 +68,7 @@ public class Leaf extends Node {
 			{
 				if(parentIdx==0){
 					
-					this.tree.updateUpper(dKey, toBeBorrwed.key, this.parent);
+					tree.updateUpper(dKey, toBeBorrwed.key, this.parent);
 				}
 				else
 					parent.entries.get(parentIdx-1).key = toBeBorrwed.key;
@@ -77,7 +77,7 @@ public class Leaf extends Node {
 	}
 
 
-	public void mergeWithLeaf(Leaf sibling, NonLeaf parent, int parentIdx, boolean left, Comparable dKey) throws ClassNotFoundException, IOException
+	public void mergeWithLeaf(BPTree tree, Leaf sibling, NonLeaf parent, int parentIdx, boolean left, Comparable dKey) throws ClassNotFoundException, IOException
 	{
 		String tmpPath = null;
 		if(left)
@@ -111,7 +111,7 @@ public class Leaf extends Node {
 
 		}
 		
-		this.tree.handleParent(parent, this.parent,tmpPath);
+		tree.handleParent(parent, this.parent,tmpPath);
 	}
 
 

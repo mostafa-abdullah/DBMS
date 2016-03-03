@@ -43,7 +43,7 @@ public class NonLeaf extends Node {
 	}
 	
 	
-	public void mergeWithNonLeaf(NonLeaf sibling, NonLeaf parent, boolean left, int parentIdx,String inTmpPath) throws ClassNotFoundException, IOException{
+	public void mergeWithNonLeaf(BPTree tree, NonLeaf sibling, NonLeaf parent, boolean left, int parentIdx,String inTmpPath) throws ClassNotFoundException, IOException{
 		
 		
 		String outTmpPath = null;
@@ -97,7 +97,7 @@ public class NonLeaf extends Node {
 		
 		DBApp.writeObject(this, outTmpPath);
 		
-		this.tree.handleParent(parent, this.parent, outTmpPath);
+		tree.handleParent(parent, this.parent, outTmpPath);
 		
 	}
 	

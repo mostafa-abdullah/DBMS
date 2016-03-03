@@ -154,7 +154,7 @@ public class BPTree implements Serializable{
 				if(leftLeaf.pointers.size() > leftLeaf.min)
 				{
 					
-					leaf.borrowTuple(leftLeaf, parent, true, parentIdx, key);
+					leaf.borrowTuple(this, leftLeaf, parent, true, parentIdx, key);
 					DBApp.writeObject(leftLeaf, siblingLeft);
 				}
 				else if(siblingRight != null)
@@ -164,18 +164,18 @@ public class BPTree implements Serializable{
 					rightLeaf = (Leaf) DBApp.readObject(siblingRight);
 					if(rightLeaf.pointers.size() > rightLeaf.min)
 					{
-						leaf.borrowTuple(rightLeaf, parent, false, parentIdx, key);
+						leaf.borrowTuple(this, rightLeaf, parent, false, parentIdx, key);
 						DBApp.writeObject(rightLeaf, siblingRight);
 					}
 					else
 					{
-						leaf.mergeWithLeaf(leftLeaf, parent, parentIdx, true, key);
+						leaf.mergeWithLeaf(this, leftLeaf, parent, parentIdx, true, key);
 						DBApp.writeObject(leftLeaf, siblingLeft);
 					}
 				}
 				else
 				{
-					leaf.mergeWithLeaf(leftLeaf, parent, parentIdx, true, key);
+					leaf.mergeWithLeaf(this, leftLeaf, parent, parentIdx, true, key);
 					DBApp.writeObject(leftLeaf, siblingLeft);
 				}
 					
@@ -187,12 +187,12 @@ public class BPTree implements Serializable{
 				rightLeaf = (Leaf) DBApp.readObject(siblingRight);
 				if(rightLeaf.pointers.size() > rightLeaf.min)
 				{
-					leaf.borrowTuple(rightLeaf, parent, false, parentIdx, key);
+					leaf.borrowTuple(this, rightLeaf, parent, false, parentIdx, key);
 					DBApp.writeObject(rightLeaf, siblingRight);
 				}
 				else
 				{
-					leaf.mergeWithLeaf(rightLeaf, parent, parentIdx, false, key);
+					leaf.mergeWithLeaf(this, rightLeaf, parent, parentIdx, false, key);
 					DBApp.writeObject(rightLeaf, siblingRight);
 				}
 			}
@@ -280,7 +280,7 @@ public class BPTree implements Serializable{
 					}
 					else
 					{
-						currentNode.mergeWithNonLeaf(leftNonLeaf, parent, true, parentIdx, tmpPath);
+						currentNode.mergeWithNonLeaf(this, leftNonLeaf, parent, true, parentIdx, tmpPath);
 						DBApp.writeObject(leftNonLeaf, siblingLeft);
 					}
 				}
@@ -289,7 +289,7 @@ public class BPTree implements Serializable{
 //					System.out.println("x");
 					
 					
-					currentNode.mergeWithNonLeaf(leftNonLeaf, parent, true, parentIdx, tmpPath);
+					currentNode.mergeWithNonLeaf(this, leftNonLeaf, parent, true, parentIdx, tmpPath);
 					
 //					System.out.println(((BPTree)DBApp.readObject(currentNode.tree)).root);
 					
@@ -309,7 +309,7 @@ public class BPTree implements Serializable{
 				}
 				else
 				{
-					currentNode.mergeWithNonLeaf(rightNonLeaf, parent, false, parentIdx, tmpPath);
+					currentNode.mergeWithNonLeaf(this, rightNonLeaf, parent, false, parentIdx, tmpPath);
 					DBApp.writeObject(rightNonLeaf, siblingRight);
 				}
 			}
@@ -520,9 +520,14 @@ public class BPTree implements Serializable{
 		tr.insert(48, "", 5);
 //		System.out.println(((BPTree)DBApp.readObject(tr.pathToTree+"/Btree.class")));
 		tr.delete(5);
+		
+		tr.delete(8);
+		tr.delete(9);
+		tr.insert(50,"asd",5);
+//		tr.delete(28);
 //		tr.delete(23);
-//		System.out.println(tr+"--------------------------------");
-//		tr.delete(8);
+		System.out.println(tr+"--------------------------------");
+		
 //		System.out.println("-------------------------------------------------------");
 //		System.out.println(((BPTree)DBApp.readObject(tr.pathToTree+"/Btree.class")));
 //		System.out.println(tr.rootPath);
