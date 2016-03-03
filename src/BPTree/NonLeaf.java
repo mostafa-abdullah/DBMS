@@ -43,36 +43,97 @@ public class NonLeaf extends Node {
 	}
 	
 	
-	public void borrow(NonLeaf sibling, NonLeaf parent, boolean left, int parentIdx)
-	{
+	public void mergeWithNonLeaf(NonLeaf sibling, NonLeaf parent, boolean left, int parentIdx,String inTmpPath) throws ClassNotFoundException, IOException{
+		
+		String outTmpPath = null;
+		NodeEntry p = null;
 		if(left)
 		{
-			NodeEntry toBeBorrwed = sibling.entries.remove(sibling.entries.size()-1);
-			this.entries.add(0,toBeBorrwed);
-			//update parent
-			parent.entries.get(parentIdx-1).key = toBeBorrwed.key;
+			
+			if(parentIdx > 0){
+				p = parent.entries.remove(parentIdx-1);
+				if(parent.entries.size() == 0)
+					outTmpPath = p.right;
+				else{
+					if(parentIdx > 0 && parentIdx <= parent.entries.size() )
+						parent.entries.get(parentIdx-1).left = p.right;
+					if(parentIdx > 1 && parentIdx <= parent.entries.size() + 1)
+						parent.entries.get(parentIdx-2).right = p.right;
+				}
+				if(this.entries.size() == 0)
+					p.right = inTmpPath;
+				else
+					p.right = this.entries.get(0).left;
+				this.entries.add(0,p);
+				p.left = sibling.entries.get(sibling.entries.size()-1).right;
+				this.entries.addAll(0,sibling.entries);
+				
+			}
 		}
 		else
 		{
-			NodeEntry toBeBorrwed = sibling.entries.remove(0);	
-			this.entries.add(toBeBorrwed);
-			Comparable newParent = sibling.entries.get(0).key;
-			parent.entries.get(parentIdx).key = newParent;
-
-			if(this.entries.size() == 1)
+			p = parent.entries.remove(parentIdx);
+			if(parent.entries.size() == 0)
+				outTmpPath = p.right;
+			else{
+				if(parentIdx >= 0 && parentIdx < parent.entries.size())
+					parent.entries.get(parentIdx).left = p.right;
+				if(parentIdx >= 1 && parentIdx  <= parent.entries.size())
+					parent.entries.get(parentIdx-1).right = p.right;
+			}
+			if(sibling.entries.size() == 0)
+				p.right = inTmpPath;
+			else
+				p.right = sibling.entries.get(0).left;
+			sibling.entries.add(0,p);
+			p.left = this.entries.get(this.entries.size()-1).right;
+			sibling.entries.addAll(0,this.entries);
+		}
+		this.tree.handleParent(parent, this.parent, outTmpPath);
+	}
+	
+	
+	public void borrow(NonLeaf sibling, NonLeaf parent, boolean left, int parentIdx, String tmpPath)
+	{
+		
+		if(left)
+		{
+			NodeEntry siblingBorrowed = sibling.entries.remove(sibling.entries.size()-1);
+			Comparable parentBorrowed = parent.entries.get(parentIdx-1).key;
+			parent.entries.get(parentIdx - 1).key = siblingBorrowed.key;
+			if(this.entries.size() > 0)
+				this.entries.add(0,new NodeEntry(parentBorrowed,siblingBorrowed.right,this.entries.get(0).left));
+			else
 			{
-				parent.entries.get(parentIdx-1).key = toBeBorrwed.key;
+				this.entries.add(0,new NodeEntry(parentBorrowed,siblingBorrowed.right,tmpPath));
+			}
+
+			
+		}
+		else
+		{
+			NodeEntry siblingBorrowed = sibling.entries.remove(0);
+			Comparable parentBorrowed = parent.entries.get(parentIdx).key;
+			parent.entries.get(parentIdx).key = siblingBorrowed.key;
+			if(entries.size() > 0)
+				this.entries.add(new NodeEntry(parentBorrowed,this.entries.get(this.entries.size() - 1).right,siblingBorrowed.left));
+			else
+			{
+				this.entries.add(new NodeEntry(parentBorrowed,tmpPath,siblingBorrowed.left));
 			}
 		}
 	}
 	
+	
+	
+	
 	public String toString(){
-		String res = "Start LEAF\n";
+		String res = "Start NON LEAF\n";
 		
 		for(NodeEntry ent : this.entries){
 			res += ent.key+" ";
 		}
-		return res+"\nEnd LEAF\n";
+		return res+"\nEnd NON LEAF\n";
 	}
 	
 	

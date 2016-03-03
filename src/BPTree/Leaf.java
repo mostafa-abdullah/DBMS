@@ -73,8 +73,9 @@ public class Leaf extends Node {
 	}
 
 
-	public void mergeWithLeaf(Leaf sibling, NonLeaf parent, int parentIdx, boolean left, Comparable dKey)
+	public void mergeWithLeaf(Leaf sibling, NonLeaf parent, int parentIdx, boolean left, Comparable dKey) throws ClassNotFoundException, IOException
 	{
+		String tmpPath = null;
 		if(left)
 		{
 			this.pointers.addAll(0,sibling.pointers);
@@ -82,6 +83,10 @@ public class Leaf extends Node {
 			{
 				if(parentIdx > 1){
 					parent.entries.get(parentIdx - 2).right = parent.entries.get(parentIdx-1).right;
+				}
+				else if(parent.entries.size() == 1)
+				{
+					tmpPath = parent.entries.get(parentIdx-1).right;
 				}
 				parent.entries.remove(parentIdx - 1);
 
@@ -92,11 +97,17 @@ public class Leaf extends Node {
 			sibling.pointers.addAll(0,this.pointers);
 
 			if(parentIdx > 0){
-				parent.entries.get(parentIdx - 1).right = parent.entries.get(parentIdx).left;
+				parent.entries.get(parentIdx - 1).right = parent.entries.get(parentIdx).right;
+			}
+			else if(parent.entries.size() == 1)
+			{
+				tmpPath = parent.entries.get(parentIdx).right;
 			}
 			parent.entries.remove(parentIdx);
 
 		}
+		
+		this.tree.handleParent(parent, this.parent,tmpPath);
 	}
 
 

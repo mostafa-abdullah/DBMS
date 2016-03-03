@@ -157,7 +157,7 @@ public class BPTree implements Serializable{
 					}
 					else
 					{
-						//etfshe5
+						leaf.mergeWithLeaf(leftLeaf, parent, parentIdx, true, key);
 					}
 				}
 					
@@ -172,7 +172,7 @@ public class BPTree implements Serializable{
 				}
 				else
 				{
-					//etfshe5
+					leaf.mergeWithLeaf(rightLeaf, parent, parentIdx, false, key);
 				}
 			}
 			else
@@ -198,14 +198,18 @@ public class BPTree implements Serializable{
 	
 	
 	
-	public void handleParent(String pathToNode) throws ClassNotFoundException, IOException
+	public void handleParent(NonLeaf currentNode, String pathToNode, String tmpPath) throws ClassNotFoundException, IOException
 	{
-		NonLeaf currentNode = (NonLeaf) DBApp.readObject(pathToNode);
+		
 		if(currentNode.entries.size() >= currentNode.min)
 			return;
 		if(currentNode.parent == null)
 		{
 			// current node is the root
+			if(currentNode.entries.size() == 0){
+				this.rootPath = tmpPath;
+				this.root = (Node) DBApp.readObject(tmpPath);
+			}
 		}
 		else
 		{
@@ -214,27 +218,27 @@ public class BPTree implements Serializable{
 			String siblingLeft = lrs.sibLingLeft;
 			String siblingRight = lrs.sibLingRight;
 			int parentIdx = lrs.idx;
-			Leaf leftLeaf = null;
-			Leaf rightLeaf = null;
+			NonLeaf leftNonLeaf = null;
+			NonLeaf rightNonLeaf = null;
 			if(siblingLeft != null)
 			{
 				// borrow from left
-				leftLeaf = (Leaf) DBApp.readObject(siblingLeft);
-				if(leftLeaf.pointers.size() > leftLeaf.min)
+				leftNonLeaf = (NonLeaf) DBApp.readObject(siblingLeft);
+				if(leftNonLeaf.entries.size() > leftNonLeaf.min)
 				{
-				//	currentNode.borrowTuple(leftLeaf, parent, true, parentIdx);
+					currentNode.borrow(leftNonLeaf, parent, true, parentIdx, tmpPath);
 				}
 				else if(siblingRight != null)
 				{
 
-					rightLeaf = (Leaf) DBApp.readObject(siblingRight);
-					if(rightLeaf.pointers.size() > rightLeaf.min)
+					rightNonLeaf = (NonLeaf) DBApp.readObject(siblingRight);
+					if(rightNonLeaf.entries.size() > rightNonLeaf.min)
 					{
-						//currentNode.borrowTuple(rightLeaf, parent, false, parentIdx);
+						currentNode.borrow(rightNonLeaf, parent, false, parentIdx, tmpPath);
 					}
 					else
 					{
-						//etfshe5
+						currentNode.mergeWithNonLeaf(leftNonLeaf, parent, true, parentIdx, tmpPath);
 					}
 				}
 					
@@ -242,14 +246,14 @@ public class BPTree implements Serializable{
 			else if(siblingRight != null)
 			{
 				// borrow from right
-				rightLeaf = (Leaf) DBApp.readObject(siblingRight);
-				if(rightLeaf.pointers.size() > rightLeaf.min)
+				rightNonLeaf = (NonLeaf) DBApp.readObject(siblingRight);
+				if(rightNonLeaf.entries.size() > rightNonLeaf.min)
 				{
-					//currentNode.borrowTuple(rightLeaf, parent, false, parentIdx);
+					currentNode.borrow(rightNonLeaf, parent, false, parentIdx, tmpPath);
 				}
 				else
 				{
-					//etfshe5
+					currentNode.mergeWithNonLeaf(rightNonLeaf, parent, false, parentIdx, tmpPath);
 				}
 			}
 			else
