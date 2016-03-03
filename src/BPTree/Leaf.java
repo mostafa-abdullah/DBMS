@@ -11,9 +11,9 @@ public class Leaf extends Node {
 	String prevLeafPath;
 	ArrayList<TuplePointer> pointers;
 
-	public Leaf(String tree, String parent, int n) {
-		super(tree, parent, n);
-		this.min = (n+1)/2;
+	public Leaf(BPTree tree, String parent) {
+		super(tree, parent);
+		this.min = (tree.n+1)/2;
 		pointers = new ArrayList<TuplePointer>();
 	}
 
@@ -67,8 +67,8 @@ public class Leaf extends Node {
 			if(this.pointers.size() == 1)
 			{
 				if(parentIdx==0){
-					BPTree tree = (BPTree) DBApp.readObject(this.tree);
-					tree.updateUpper(dKey, toBeBorrwed.key, this.parent);
+					
+					this.tree.updateUpper(dKey, toBeBorrwed.key, this.parent);
 				}
 				else
 					parent.entries.get(parentIdx-1).key = toBeBorrwed.key;
@@ -111,7 +111,7 @@ public class Leaf extends Node {
 
 		}
 		
-		BPTree.handleParent(this.tree,parent, this.parent,tmpPath);
+		this.tree.handleParent(parent, this.parent,tmpPath);
 	}
 
 

@@ -4,16 +4,16 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 public class Node implements Serializable{
-	String tree;
+	BPTree tree;
 	int max;
 	int min;
 	String parent;
 	int nodeNo;
 	
-	public Node(String tree, String parent, int n)
+	public Node(BPTree tree, String parent)
 	{
 		this.parent = parent;
 		this.tree = tree;
-		this.max = n;
+		this.max = tree.n;
 	}
 }

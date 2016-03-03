@@ -9,9 +9,9 @@ public class NonLeaf extends Node {
 
 	ArrayList<NodeEntry> entries;
 	
-	public NonLeaf(String tree, String parent, int n) {
-		super(tree, parent, n);
-		this.min = (int) Math.ceil((n+1)/2.0) - 1;
+	public NonLeaf(BPTree tree, String parent) {
+		super(tree, parent);
+		this.min = (int) Math.ceil((tree.n+1)/2.0) - 1;
 		entries = new ArrayList<NodeEntry>();
 
 	}
@@ -97,7 +97,7 @@ public class NonLeaf extends Node {
 		
 		DBApp.writeObject(this, outTmpPath);
 		
-		BPTree.handleParent(this.tree,parent, this.parent, outTmpPath);
+		this.tree.handleParent(parent, this.parent, outTmpPath);
 		
 	}
 	
