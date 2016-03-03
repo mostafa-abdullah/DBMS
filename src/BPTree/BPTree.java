@@ -16,6 +16,8 @@ public class BPTree implements Serializable{
 	String column;
 	int countNodes;
 	String pathToTree;
+	int minLeaf;
+	int minNonLeaf;
 	public BPTree(int n, String tableName, String column) throws FileNotFoundException, IOException{
 		this.n = n;
 		this.tableName = tableName;
@@ -23,6 +25,8 @@ public class BPTree implements Serializable{
 		countNodes = 1;
 		root = new Leaf(this,null);
 		root.min = 1;
+		minLeaf = (n+1)/2;
+		minNonLeaf = (int) Math.ceil((n+1)/2.0) - 1;
 		pathToTree = "data/"+tableName+"/indices/"+column;
 		rootPath = pathToTree+"/0.class";
 		new File(pathToTree).mkdirs();
@@ -34,69 +38,84 @@ public class BPTree implements Serializable{
 	public void insert(Comparable key, String pagePath, int idx) throws ClassNotFoundException, IOException
 	{
 		String pathToLeaf = findLeaf(rootPath, key,null);
+		
+		
 
-//		System.out.println(pathToLeaf);
 		Leaf leaf = (Leaf) DBApp.readObject(pathToLeaf);
+		if(pathToLeaf.equals(rootPath)){
+			this.root = leaf;
+		}
 		TuplePointer newPointer = new TuplePointer(idx, pagePath,key);
 		if(leaf.pointers.size() == 0){
+			
 			leaf.pointers.add(newPointer);
 			DBApp.writeObject(leaf, pathToLeaf);
 			return;
 		}
 		leaf.insertSorted(newPointer);
-		//		if((Integer)key == 125){
-		//			System.out.println(leaf);
-		//		}
+
 		if(leaf.pointers.size() > leaf.max)
 		{
+			
+			
+			
 			Leaf newLeaf = new Leaf(this, leaf.parent);
 			newLeaf.nextLeafPath = leaf.nextLeafPath;
 			newLeaf.prevLeafPath = pathToLeaf;
 
 			String newPath = pathToTree+"/"+countNodes++ + ".class";
+			
 			leaf.nextLeafPath = newPath;
-			//			System.out.println(leaf);
 
+			
 			newLeaf.pointers = leaf.getSecondHalf();
-
-			//			for(TuplePointer tp : newLeaf.pointers){
-			//				System.out.print(tp.key+" ");
-			//			}
+	
+			
 			DBApp.writeObject(newLeaf, newPath);
 			DBApp.writeObject(leaf, pathToLeaf);
 
 			insertIntoNonLeaf(leaf.parent, new NodeEntry(newLeaf.pointers.get(0).key,pathToLeaf,newPath));
 
 		}
+		
 		DBApp.writeObject(leaf, pathToLeaf);
-
+		
 	}
 
 	private void insertIntoNonLeaf(String pathToNode, NodeEntry ne) throws ClassNotFoundException, IOException
 	{
-		//		System.out.println(pathToNode);
+
 		if(pathToNode == null)
 		{
 
 			NonLeaf root = new NonLeaf(this, null);
-			if(this.root != null)
+
 			{
+				
 				this.root.min = (int)Math.ceil((n+1)/2.0) - 1;
 
+				
+				DBApp.writeObject(this.root, this.rootPath);
+				
+
 			}
+			
 			root.min = 1;
 			rootPath = pathToTree+"/"+countNodes++ + ".class";
 			root.entries.add(ne);
+			
 			this.root = root;
 			DBApp.writeObject(this, pathToTree+"/Btree.class");
 			DBApp.writeObject(root, rootPath);
+			
 			return;
 		}
+		
 		NonLeaf nl = (NonLeaf) DBApp.readObject(pathToNode);
 
 		nl.insertSorted(ne);
 
-		//		System.out.println(nl);
+
 
 		if(nl.entries.size() > nl.max)
 		{
@@ -128,14 +147,14 @@ public class BPTree implements Serializable{
 		Leaf leaf = (Leaf) DBApp.readObject(pathToLeaf);
 		int deletedIdx = leaf.deleteKey(key);
 
-//		System.out.println(leaf);
+
 		if(leaf.parent == null){
 			DBApp.writeObject(leaf, pathToLeaf);
 			return;
 		}
 		if(leaf.pointers.size() < leaf.min){
 			NonLeaf parent = (NonLeaf) DBApp.readObject(leaf.parent);
-//			DBApp.writeObject(leaf, pathToLeaf);
+
 			LeftAndRightSiblings lrs = getSibLings(pathToLeaf, parent);
 			
 			String siblingLeft = lrs.sibLingLeft;
@@ -198,7 +217,7 @@ public class BPTree implements Serializable{
 			}
 			else
 			{
-				//rawwa7 le omak
+				
 				
 			}
 			
@@ -227,7 +246,8 @@ public class BPTree implements Serializable{
 	
 	protected void handleParent(NonLeaf currentNode, String pathToNode, String tmpPath) throws ClassNotFoundException, IOException
 	{
-		
+		if(pathToNode.equals(rootPath))
+			this.root = currentNode;
 		
 		if(currentNode.entries.size() >= currentNode.min)
 			return;
@@ -236,8 +256,10 @@ public class BPTree implements Serializable{
 			
 			// current node is the root
 			if(currentNode.entries.size() == 0){
-//				System.out.println(rootPath);
-//				System.out.println(tmpPath);
+
+				
+				this.root.min = (int) Math.ceil((this.n+1)/2.0) - 1;
+				DBApp.writeObject(this.root, this.rootPath);
 				
 				this.rootPath = tmpPath;
 				this.root = (Node) DBApp.readObject(tmpPath);
@@ -263,8 +285,10 @@ public class BPTree implements Serializable{
 				// borrow from left
 				leftNonLeaf = (NonLeaf) DBApp.readObject(siblingLeft);
 				
-				if(leftNonLeaf.entries.size() > leftNonLeaf.min)
+				if(leftNonLeaf.entries.size() > this.minNonLeaf)
 				{
+//					
+					
 					currentNode.borrow(leftNonLeaf, parent, true, parentIdx, tmpPath);
 					DBApp.writeObject(leftNonLeaf, siblingLeft);
 				}
@@ -273,7 +297,7 @@ public class BPTree implements Serializable{
 					
 
 					rightNonLeaf = (NonLeaf) DBApp.readObject(siblingRight);
-					if(rightNonLeaf.entries.size() > rightNonLeaf.min)
+					if(rightNonLeaf.entries.size() > this.minNonLeaf)
 					{
 						currentNode.borrow(rightNonLeaf, parent, false, parentIdx, tmpPath);
 						DBApp.writeObject(rightNonLeaf, siblingRight);
@@ -286,12 +310,12 @@ public class BPTree implements Serializable{
 				}
 				else
 				{
-//					System.out.println("x");
+
 					
 					
 					currentNode.mergeWithNonLeaf(this, leftNonLeaf, parent, true, parentIdx, tmpPath);
 					
-//					System.out.println(((BPTree)DBApp.readObject(currentNode.tree)).root);
+
 					
 					DBApp.writeObject(leftNonLeaf, siblingLeft);
 					
@@ -315,7 +339,7 @@ public class BPTree implements Serializable{
 			}
 			else
 			{
-				//rawwa7 le omak
+
 			}
 			DBApp.writeObject(currentNode, pathToNode);
 			DBApp.writeObject(parent, currentNode.parent);
@@ -472,7 +496,7 @@ public class BPTree implements Serializable{
 			return res;
 		}
 		NonLeaf nl = (NonLeaf) n;
-//		System.out.println(nl);
+
 		String res = "";
 		for(NodeEntry e : nl.entries)
 		{
@@ -491,19 +515,34 @@ public class BPTree implements Serializable{
 	}
 
 	public static void main(String[] args) throws FileNotFoundException, IOException, ClassNotFoundException {
-		BPTree tr = new BPTree(4,"Student", "ID");
+		BPTree tr = new BPTree(2,"Student", "ID");
 
-		tr.insert(5, "", 5);
-		tr.insert(10, "", 5);
-		tr.insert(25, "", 5);
-		tr.insert(13, "", 5);
-		tr.insert(12, "", 5);
-		tr.insert(10, "", 5);
-		tr.insert(11, "", 5);
-		tr.insert(26, "", 5);
 		tr.insert(1, "", 5);
-		tr.insert(29, "", 5);
+		tr.insert(5, "", 5);
+		tr.insert(8, "", 5);
+		tr.insert(12, "", 5);
+		tr.insert(23, "", 5);
+		tr.insert(48, "", 5);
+		tr.insert(24, "", 5);
+		tr.insert(28, "", 5);
+		tr.insert(40, "", 5);
+		tr.insert(2, "", 5);
+		tr.insert(7, "", 5);
+		tr.insert(9, "", 5);
+		tr.insert(18, "", 5);
 		
+		
+		tr.delete(48);
+		tr.delete(40);
+		tr.delete(2);
+		tr.delete(18);
+		tr.delete(12);
+		tr.delete(9);
+		tr.delete(5);
+		tr.delete(23);
+		tr.delete(24);
+		tr.delete(28);
+
 		System.out.println(tr+"--------------------------------");
 
 	}

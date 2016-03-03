@@ -61,23 +61,24 @@ public class Leaf extends Node {
 		}
 		else
 		{
-			willUpdateUpper &= parentIdx == 0;
+//			willUpdateUpper &= parentIdx == 0;
 			TuplePointer toBeBorrwed = sibling.pointers.remove(0);	
 			this.pointers.add(toBeBorrwed);
 			Comparable newParent = sibling.pointers.get(0).key;
 			parent.entries.get(parentIdx).key = newParent;
 
-			if(willUpdateUpper)
+//			if(willUpdateUpper)
 			{
+				
 				if(parentIdx==0){
-					
+						
 					tree.updateUpper(dKey, toBeBorrwed.key, this.parent);
 				}
-				else
-					parent.entries.get(parentIdx-1).key = toBeBorrwed.key;
+				else if(willUpdateUpper)
+					parent.entries.get(parentIdx-1).key = this.pointers.get(0).key;
 			}
 		}
-//		System.out.println(willUpdateUpper);
+
 	}
 
 
@@ -120,8 +121,8 @@ public class Leaf extends Node {
 		}
 		if(willUpdateUpper){
 			tree.updateUpper(dKey, newKey, this.parent);
-			System.out.println(((NonLeaf)DBApp.readObject(this.parent)));
-//			System.out.println(dKey+" " +newKey +" "+willUpdateUpper);
+			
+
 		}
 		tree.handleParent(parent, this.parent,tmpPath);
 		
