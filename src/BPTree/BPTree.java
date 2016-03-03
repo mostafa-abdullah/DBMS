@@ -72,7 +72,7 @@ public class BPTree implements Serializable{
 
 	}
 
-	public void insertIntoNonLeaf(String pathToNode, NodeEntry ne) throws ClassNotFoundException, IOException
+	private void insertIntoNonLeaf(String pathToNode, NodeEntry ne) throws ClassNotFoundException, IOException
 	{
 		//		System.out.println(pathToNode);
 		if(pathToNode == null)
@@ -225,7 +225,7 @@ public class BPTree implements Serializable{
 	
 	
 	
-	public void handleParent(NonLeaf currentNode, String pathToNode, String tmpPath) throws ClassNotFoundException, IOException
+	protected void handleParent(NonLeaf currentNode, String pathToNode, String tmpPath) throws ClassNotFoundException, IOException
 	{
 		
 		
@@ -323,7 +323,7 @@ public class BPTree implements Serializable{
 	}
 	
 	
-	public static LeftAndRightSiblings getSibLings(String pathToNode, NonLeaf parent)
+	private static LeftAndRightSiblings getSibLings(String pathToNode, NonLeaf parent)
 	{
 		String siblingLeft = null;
 		String siblingRight = null;
@@ -364,7 +364,7 @@ public class BPTree implements Serializable{
 		}
 	}
 
-	public void updateUpper(Comparable oldKey, Comparable newKey ,String pathToNode) throws ClassNotFoundException, IOException
+	protected void updateUpper(Comparable oldKey, Comparable newKey ,String pathToNode) throws ClassNotFoundException, IOException
 	{
 		if(pathToNode == null)
 			return;
@@ -382,7 +382,7 @@ public class BPTree implements Serializable{
 		updateUpper(oldKey,newKey, nextNode.parent);
 	}
 
-	public TuplePointer find(Comparable key) throws ClassNotFoundException, IOException{
+	private TuplePointer find(Comparable key) throws ClassNotFoundException, IOException{
 		if(root instanceof Leaf)
 		{
 			Leaf r = (Leaf) root;
@@ -413,7 +413,7 @@ public class BPTree implements Serializable{
 	}
 
 
-	public String findLeaf(String current, Object key, String parent) throws ClassNotFoundException, IOException
+	private String findLeaf(String current, Object key, String parent) throws ClassNotFoundException, IOException
 	{
 		Node cur = (Node) DBApp.readObject(current);
 		cur.parent = parent;
@@ -455,7 +455,7 @@ public class BPTree implements Serializable{
 		}
 	}
 
-	public String printTree(String path) throws ClassNotFoundException, IOException{
+	private String printTree(String path) throws ClassNotFoundException, IOException{
 
 		Node n = (Node) DBApp.readObject(path);
 		if(n instanceof Leaf)
