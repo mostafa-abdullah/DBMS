@@ -7,6 +7,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import DB.DBApp;
+import DB.Page;
+import DB.Tuple;
 
 public class BPTree implements Serializable{
 	int n;
@@ -37,6 +39,7 @@ public class BPTree implements Serializable{
 
 	public void insert(Comparable key, String pagePath, int idx) throws ClassNotFoundException, IOException
 	{
+		
 		String pathToLeaf = findLeaf(rootPath, key,null);
 		
 		
@@ -79,6 +82,8 @@ public class BPTree implements Serializable{
 		}
 		
 		DBApp.writeObject(leaf, pathToLeaf);
+//		DBApp.writeObject(root, rootPath);
+		DBApp.writeObject(this, pathToTree+"/Btree.class");
 		
 	}
 
@@ -239,6 +244,8 @@ public class BPTree implements Serializable{
 			DBApp.writeObject(leaf, pathToLeaf);
 			
 		}
+		
+		DBApp.writeObject(this, pathToTree+"/Btree.class");
 
 	}
 	
@@ -406,13 +413,17 @@ public class BPTree implements Serializable{
 		updateUpper(oldKey,newKey, nextNode.parent);
 	}
 
-	private TuplePointer find(Comparable key) throws ClassNotFoundException, IOException{
+	
+	
+	public TuplePointer find(Comparable key) throws ClassNotFoundException, IOException{
+		Node root = (Node)DBApp.readObject(this.rootPath);
 		if(root instanceof Leaf)
 		{
+			System.out.println(root);
 			Leaf r = (Leaf) root;
 			for(int i = 0; i<r.pointers.size(); i++)
 			{
-				Object k = r.pointers.get(i);
+				Object k = r.pointers.get(i).key;
 				if(k.equals(key))
 				{
 					return r.pointers.get(i);
@@ -515,36 +526,23 @@ public class BPTree implements Serializable{
 	}
 
 	public static void main(String[] args) throws FileNotFoundException, IOException, ClassNotFoundException {
-		BPTree tr = new BPTree(2,"Student", "ID");
+		BPTree tr = new BPTree(5,"Student", "ID");
 
-		tr.insert(1, "", 5);
-		tr.insert(5, "", 5);
-		tr.insert(8, "", 5);
-		tr.insert(12, "", 5);
-		tr.insert(23, "", 5);
-		tr.insert(48, "", 5);
-		tr.insert(24, "", 5);
-		tr.insert(28, "", 5);
-		tr.insert(40, "", 5);
-		tr.insert(2, "", 5);
-		tr.insert(7, "", 5);
-		tr.insert(9, "", 5);
-		tr.insert(18, "", 5);
+		for(int i=0; i<50; i++){
+			BPTree tree = (BPTree) DBApp.readObject("data/Student/indices/ID/Btree.class");
+			tree.insert(i, "asda", 5);
+		}
+		BPTree tree = (BPTree) DBApp.readObject("data/Student/indices/ID/Btree.class");
+		System.out.println(tree+"--------------------------------");
+		for(int i=0; i<500; i++)
+			tree.delete(i);
 		
-		
-		tr.delete(48);
-		tr.delete(40);
-		tr.delete(2);
-		tr.delete(18);
-		tr.delete(12);
-		tr.delete(9);
-		tr.delete(5);
-		tr.delete(23);
-		tr.delete(24);
-		tr.delete(28);
-
-		System.out.println(tr+"--------------------------------");
-
+		for(int i=0; i<50; i++){
+			tree = (BPTree) DBApp.readObject("data/Student/indices/ID/Btree.class");
+			tree.insert(i, "asda", 5);
+		}
+		tree = (BPTree) DBApp.readObject("data/Student/indices/ID/Btree.class");
+		System.out.println(tree);
 	}
 
 }

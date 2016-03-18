@@ -5,9 +5,10 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.TreeSet;
+
+import BPTree.BPTree;
 public class Table implements Serializable{
 	String tableName;
 	Hashtable<String,String> htblColNameType;
@@ -15,6 +16,7 @@ public class Table implements Serializable{
 	String strKeyColName;
 	ArrayList<String> pages;
 	TreeSet<Object> presentKeys;
+	ArrayList<String> indices = new ArrayList<String>();
 	
 	/**
 	 * The table has a name, columns with types, some of which may reference columns in another

@@ -1,4 +1,6 @@
 package DB;
+import static java.lang.System.in;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,13 +16,16 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Scanner;
 import java.util.StringTokenizer;
 
+import BPTree.BPTree;
+import BPTree.TuplePointer;
 import Exceptions.DBAppException;
 import Exceptions.DBEngineException;
-
 
 public class DBApp {
 
@@ -64,6 +69,7 @@ public class DBApp {
 		if(!config.exists()){
 			pw = new PrintWriter(config);
 			pw.println("N=200");
+			pw.println("n=50");
 			pw.flush();
 			pw.close();
 		}
@@ -98,7 +104,7 @@ public class DBApp {
 		if(!validReference){
 			throw new DBAppException("Error: Invalid references.");
 		}
-		
+
 		writeObject(tb,"data/"+strTableName+"/table.class");
 		try {
 
@@ -192,6 +198,57 @@ public class DBApp {
 			throw new DBAppException("Error: Invalid provided coloumns.");
 		}
 		ArrayList<Tuple> result = new ArrayList<Tuple>();
+		if(strOperator.equals("AND"))
+			for(String key : htblColNameValue.keySet())
+			{
+				if(t.indices.contains(key)){
+					BPTree tree = (BPTree)readObject("data/"+strTable+"/indices/"+key+"/Btree.class");
+					TuplePointer tp = tree.find((Comparable)htblColNameValue.get(key));
+					if(tp == null)
+						return result.iterator();
+					Page p = (Page) readObject(tp.getPagePath());
+					Tuple tup = p.tuples[tp.getIdx()];
+					for(String key2: htblColNameValue.keySet())
+					{
+						if(!htblColNameValue.get(key2).equals(tup.record.get(key2)))
+							return result.iterator();
+					}
+					result.add(tup);
+					return result.iterator();
+				}
+			}
+		else{
+			boolean useTree = true;
+			for(String key : htblColNameValue.keySet())
+			{
+				if(!t.indices.contains(key)){
+					useTree = false;
+					break;
+				}
+			}
+			if(useTree)
+			{
+				HashSet<Object> tuplesKeys = new HashSet<Object>();
+				for(String key : htblColNameValue.keySet())
+				{
+					BPTree tree = (BPTree)readObject("data/"+strTable+"/indices/"+key+"/Btree.class");
+					TuplePointer tp = tree.find((Comparable)htblColNameValue.get(key));
+					if(tp == null)
+						continue;
+					Page p = (Page) readObject(tp.getPagePath());
+					Tuple tup = p.tuples[tp.getIdx()];
+					if(tup == null)
+						continue;
+					if(!tuplesKeys.contains(tup.record.get(t.strKeyColName)))
+					{
+						tuplesKeys.add(tup.record.get(t.strKeyColName));
+						result.add(tup);
+					}
+				}
+				return result.iterator();
+			}
+		}
+
 
 
 		for(String pagePath : t.pages){
@@ -275,11 +332,11 @@ public class DBApp {
 		Page p = (Page)readObject(pagePath);
 		if(p.numObjects == p.N){
 			//create new page;
-			Page newP = new Page(strTableName, getMaximumNumber());
+			p = new Page(strTableName, getMaximumNumber());
 			t.pages.add("data/"+strTableName+"/"+t.pages.size()+".class");
-			newP.tuples[newP.numObjects++] = new Tuple(htblColNameValue);
+			p.tuples[p.numObjects++] = new Tuple(htblColNameValue);
 			t.presentKeys.add(tupleKey);
-			writeObject(newP,t.pages.get(t.pages.size()-1));			
+			writeObject(p,t.pages.get(t.pages.size()-1));			
 			writeObject(t,"data/"+strTableName+"/table.class");
 		}
 		else{
@@ -288,9 +345,19 @@ public class DBApp {
 			writeObject(t,"data/"+strTableName+"/table.class");
 			writeObject(p, t.pages.get(t.pages.size()-1));
 		}
-		
+
+		for(String key : htblColNameValue.keySet())
+		{
+			if(t.indices.contains(key))
+			{
+				BPTree tree = (BPTree)readObject("data/"+strTableName+"/indices/"+key+"/Btree.class");
+				tree.insert((Comparable)htblColNameValue.get(key), t.pages.get(t.pages.size()-1), p.numObjects-1);
+			}
+		}
+
+
 	}
-	
+
 	/**
 	 * This method updates an existing tuple in a table.
 	 * It validates 2 things:
@@ -320,15 +387,43 @@ public class DBApp {
 		if(!validColumns)
 			throw new DBAppException("Error: Input columns mismatch with table columns");
 		boolean found = false;
+		if(t.indices.contains(t.strKeyColName))
+		{
+			BPTree tree = (BPTree)readObject("data/"+strTableName+"/indices/"+t.strKeyColName+"/Btree.class");
+			TuplePointer tp = tree.find((Comparable)strKey);
+			Page p = (Page) readObject(tp.getPagePath());
+			for(String key : htblColNameValue.keySet())
+			{
+
+				if(t.indices.contains(key))
+				{
+					BPTree tree2 = (BPTree)readObject("data/"+strTableName+"/indices/"+key+"/Btree.class");
+					tree2.delete((Comparable)p.tuples[tp.getIdx()].record.get(key));
+					tree2.insert((Comparable)htblColNameValue.get(key), tp.getPagePath(), tp.getIdx());
+				}
+				p.tuples[tp.getIdx()].record.put(key, htblColNameValue.get(key));
+				writeObject(p,tp.getPagePath());
+			}
+
+			return;
+		}
+
 		for(String pagePath: t.pages){
 			if(found)
 				break;
 			Page p = (Page) readObject(pagePath);
-			for(Tuple tup : p.tuples){
+			for(int i=0; i<p.tuples.length; i++){
+				Tuple tup = p.tuples[i];
 				if(found)
 					break;
 				if(tup.record.get(t.strKeyColName).equals(strKey)){
 					for(String key : htblColNameValue.keySet()){
+						if(t.indices.contains(key))
+						{
+							BPTree tree2 = (BPTree)readObject("data/"+strTableName+"/indices/"+key+"/Btree.class");
+							tree2.delete((Comparable)tup.record.get(key));
+							tree2.insert((Comparable)htblColNameValue.get(key), pagePath, i);
+						}
 						tup.record.put(key, htblColNameValue.get(key));
 					}
 					found = true;
@@ -336,10 +431,10 @@ public class DBApp {
 				}
 			}
 		}
-		
-		
+
+
 	}
-	
+
 	/**
 	 * This method deletes one or more entries from a target table.
 	 * Its input is the table's name, the fields to search for, and the logical
@@ -358,22 +453,77 @@ public class DBApp {
 	 * @throws ClassNotFoundException
 	 * @throws IOException
 	 */
-	
+
 	public void deleteFromTable(String strTableName,
 			Hashtable<String,Object> htblColNameValue,
 			String strOperator)
-			throws DBEngineException, DBAppException, ClassNotFoundException, IOException{
+					throws DBEngineException, DBAppException, ClassNotFoundException, IOException{
 		boolean tableExists = checkTableExists(strTableName);
 		if(!tableExists)
 			throw new DBAppException("Error: Table doesn't exist.");
 		Table t = (Table) readObject("data/"+strTableName+"/table.class");
-		
+
 		boolean validColumns = checkValidColoumns(t, htblColNameValue);
 		if(!validColumns)
 			throw new DBAppException("Error: Input columns names or types don't match with table's columns.");
+		
+		if(strOperator.equals("AND"))
+			for(String key : htblColNameValue.keySet())
+			{
+				if(t.indices.contains(key)){
+					BPTree tree = (BPTree)readObject("data/"+strTableName+"/indices/"+key+"/Btree.class");
+					TuplePointer tp = tree.find((Comparable)htblColNameValue.get(key));
+					if(tp == null)
+						return;
+					Page p = (Page) readObject(tp.getPagePath());
+					Tuple tup = p.tuples[tp.getIdx()];
+					for(String key2: htblColNameValue.keySet())
+					{
+						if(!htblColNameValue.get(key2).equals(tup.record.get(key2)))
+							return;
+					}
+					p.tuples[tp.getIdx()] = null;
+					writeObject(p, tp.getPagePath());
+					tree.delete((Comparable)tup.record.get(key));
+					return;
+				}
+			}
+		else{
+			boolean useTree = true;
+			for(String key : htblColNameValue.keySet())
+			{
+				if(!t.indices.contains(key)){
+					useTree = false;
+					break;
+				}
+			}
+			if(useTree)
+			{
+//				HashSet<Object> tuplesKeys = new HashSet<Object>();
+				for(String key : htblColNameValue.keySet())
+				{
+					BPTree tree = (BPTree)readObject("data/"+strTableName+"/indices/"+key+"/Btree.class");
+					
+					TuplePointer tp = tree.find((Comparable)htblColNameValue.get(key));
+					if(tp == null)
+						continue;
+					Page p = (Page) readObject(tp.getPagePath());
+					Tuple tup = p.tuples[tp.getIdx()];
+					if(tup == null)
+						continue;
+					p.tuples[tp.getIdx()] = null;
+					writeObject(p, tp.getPagePath());
+					tree.delete((Comparable)tup.record.get(key));
+				}
+				return;
+			}
+		}
+		
+		
+		
 		for(String pagePath : t.pages){
 			Page p = (Page)readObject(pagePath);
-//			for(Tuple tup : p.tuples){
+			//			for(Tuple tup : p.tuples){
 			for(int i=0; i<p.tuples.length; i++){
 				Tuple tup = p.tuples[i];
 				if(tup == null)
@@ -397,15 +547,80 @@ public class DBApp {
 			}
 			writeObject(p, pagePath);
 		}
-		
+
+
 	}
-	
-	
-	
-	
 
 
-	
+	/**
+	 * Create a B+ tree index on a specified column in a given table.
+	 * The method validates 3 things:
+	 * 		1) The given table exists in the database.
+	 * 		2) The specified column exists in the given table
+	 * 		3) The index is not already existing on the specified column
+	 * 
+	 * If the table already had data before creating the index, the keys of these
+	 * data are inserted into the created B+ tree
+	 * 
+	 * @param strTableName
+	 * @param strColName
+	 * @throws DBAppException
+	 * @throws ClassNotFoundException
+	 * @throws IOException
+	 */
+
+	public void createIndex(String strTableName, String strColName) throws DBAppException, ClassNotFoundException, IOException
+	{
+		boolean tableExists = checkTableExists(strTableName);
+		if(!tableExists)
+			throw new DBAppException("Error: Table doesn't exist");
+		Table t = (Table)readObject("data/"+strTableName+"/table.class");
+		boolean columnExists = checkColumnExists(t, strColName);
+		if(!columnExists)
+			throw new DBAppException("Error: Column doesn't exist");
+		boolean indexExists =  checkIndexExists(strTableName,strColName);
+		if(indexExists)
+			return;
+		
+		BufferedReader br = new BufferedReader(new FileReader("config/DBApp.config"));
+		br.readLine();
+		StringTokenizer st = new StringTokenizer(br.readLine(),"=");
+		st.nextToken();
+		int maxBPTree = Integer.parseInt(st.nextToken());
+		
+		BPTree tree = new BPTree(maxBPTree,strTableName,strColName);
+		for(String pagePath: t.pages)
+		{
+			Page p = (Page) readObject(pagePath);
+			
+			for(int i=0; i<p.numObjects; i++)
+			{
+				if(p.tuples[i] == null)
+					continue;
+				tree.insert((Comparable)p.tuples[i].record.get(strColName), pagePath, i);
+			}
+		}
+		t.indices.add(strColName);
+		writeObject(t,"data/"+strTableName+"/table.class");
+	}
+
+
+	private boolean checkIndexExists(String strTableName, String strColName) {
+		File f = new File("data/"+strColName+"/indices/"+strColName+"/BTree.class");
+		return f.exists();
+	}
+
+	public boolean checkColumnExists(Table t, String columnName)
+	{
+		return t.htblColNameType.containsKey(columnName);
+	}
+
+
+
+
+
+
+
 
 	/**
 	 * This method checks if foreign keys in the provided columns actually exist in the
@@ -517,16 +732,18 @@ public class DBApp {
 		oos.writeObject(x);
 		oos.close();
 	}
+
+
 	
-	public static void main(String[] args) throws ClassNotFoundException, DBAppException, IOException, DBEngineException {
-//		DBApp x = new DBApp();
-//		Hashtable<String,Object> ht = new Hashtable<String,Object>();
-//		ht.put("Last_Name", "LN21");
-//		ht.put("Age", 35);
-////		x.updateTable("Student", 20, ht);
-//		x.deleteFromTable("Student", ht, "OR");
-//		new File("data/bla").mkdir();
+	public static void main(String[] args) throws ClassNotFoundException, IOException {
+		BPTree tree = (BPTree) readObject("data/Student/indices/ID/Btree.class");
+//		System.out.println(tree.find(45));
+//		tree.insert(45, "", 0);
+		
+		System.out.println(tree);
 	}
+
+
 
 
 
