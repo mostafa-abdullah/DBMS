@@ -35,5 +35,5 @@ Using the makefile:
     - make clean    --> Deletes the current data of the database
 
 
-> To test the project, you need to add your custom database entries in DBAppTest.java, then use the makefile to run the project as indicated above, or run it directly from eclipse.
+> To test the project, you need to add your custom database entries in DBAppTest.java, then use the makefile to run the project as indicated above, or run it directly from your IDE.
 
