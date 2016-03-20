@@ -419,7 +419,7 @@ public class BPTree implements Serializable{
 		Node root = (Node)DBApp.readObject(this.rootPath);
 		if(root instanceof Leaf)
 		{
-			System.out.println(root);
+			
 			Leaf r = (Leaf) root;
 			for(int i = 0; i<r.pointers.size(); i++)
 			{

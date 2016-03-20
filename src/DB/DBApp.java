@@ -1,5 +1,5 @@
 package DB;
-import static java.lang.System.in;
+
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -735,13 +735,7 @@ public class DBApp {
 
 
 	
-	public static void main(String[] args) throws ClassNotFoundException, IOException {
-		BPTree tree = (BPTree) readObject("data/Student/indices/ID/Btree.class");
-//		System.out.println(tree.find(45));
-//		tree.insert(45, "", 0);
-		
-		System.out.println(tree);
-	}
+	
 
 
 
